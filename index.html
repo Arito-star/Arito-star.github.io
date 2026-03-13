@@ -1,50 +1,38 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
 <meta charset="UTF-8">
 <title>Беш Таш</title>
+
+<link rel="stylesheet" href="style.css">
 </head>
 
-<body bgcolor="green" style="text-align:center; color:white; font-family:Arial;">
+<body>
+
+<div id="game">
 
 <h1>БЕШ ТАШ</h1>
-<p>Нажмите на камни чтобы "собрать" их</p>
 
-<!-- Камень 1 -->
-<input type="checkbox" id="s1">
-<label for="s1">
-<img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Stone.jpg" width="80">
-</label>
+<div id="info">Нужно собрать: 1</div>
 
-<!-- Камень 2 -->
-<input type="checkbox" id="s2">
-<label for="s2">
-<img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Stone.jpg" width="80">
-</label>
+<div id="toss"></div>
 
-<!-- Камень 3 -->
-<input type="checkbox" id="s3">
-<label for="s3">
-<img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Stone.jpg" width="80">
-</label>
+<div id="hint">ПРОБЕЛ ИЛИ КЛИК ДЛЯ БРОСКА</div>
 
-<!-- Камень 4 -->
-<input type="checkbox" id="s4">
-<label for="s4">
-<img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Stone.jpg" width="80">
-</label>
+<div id="message">
 
-<!-- Камень 5 -->
-<input type="checkbox" id="s5">
-<label for="s5">
-<img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Stone.jpg" width="80">
-</label>
+<h2 id="msgTitle"></h2>
 
-<p>Если нажали на все камни — вы собрали Беш Таш!</p>
+<p id="msgText"></p>
 
-<br><br>
+<button onclick="closeMessage()">Продолжить</button>
 
-<button onclick="location.reload()">Начать заново</button>
+</div>
+
+</div>
+
+<script src="script.js"></script>
 
 </body>
 </html>
