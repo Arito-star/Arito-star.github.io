@@ -51,17 +51,17 @@
         for (let i = 0; i < 5; i++) {
             const el = document.createElement('div'); el.className = 'stone';
             const p = stonePalettes[Math.floor(Math.random()*stonePalettes.length)];
-            el.style.background = radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%), linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);
-            const r = () => 40 + Math.random()*25; el.style.borderRadius = ${r()}% ${r()}% ${r()}% ${r()}% / ${r()}% ${r()}% ${r()}% ${r()}%;
-            el.style.left = ${Math.random()*(window.innerWidth-160)+80}px; el.style.top = ${Math.random()*(window.innerHeight-200)+100}px;
-            el.style.transform = rotate(${Math.random()*360}deg); el.onclick = (e) => handleStoneClick(i, e);
+            el.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%), linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%)`;
+            const r = () => 40 + Math.random()*25; el.style.borderRadius = `${r()}% ${r()}% ${r()}% ${r()}% / ${r()}% ${r()}% ${r()}% ${r()}%`;
+            el.style.left = `${Math.random()*(window.innerWidth-160)+80}px`; el.style.top = `${Math.random()*(window.innerHeight-200)+100}px`;
+            el.style.transform = `rotate(${Math.random()*360}deg)`; el.onclick = (e) => handleStoneClick(i, e);
             document.getElementById('game-container').appendChild(el); stones.push({el, collected:false});
         }
-        levelNameEl.innerText = levelData[level-1].name; statsEl.innerText = Собери: ${levelData[level-1].target} камень;
+        levelNameEl.innerText = levelData[level-1].name; statsEl.innerText = `Собери: ${levelData[level-1].target} камень`;
         resetTossStone();
     }
     function resetTossStone() {
-        tossY = window.innerHeight/2 + 150; tossStone.style.left = ${window.innerWidth/2-27}px; tossStone.style.top = ${tossY}px; isTossing = false;
+        tossY = window.innerHeight/2 + 150; tossStone.style.left = `${window.innerWidth/2-27}px`; tossStone.style.top = `${tossY}px`; isTossing = false;
     }
     function handleToss() {
         if (isTossing || messageBox.style.display === 'block') return;
@@ -70,8 +70,8 @@
     }
     function updateToss() {
         if (!isTossing) return;
-        tossVelocity += gravity; tossY += tossVelocity; tossStone.style.top = ${tossY}px;
-        tossStone.style.transform = rotate(${tossY*0.15}deg) scale(${1+Math.abs(tossVelocity)*0.02});
+        tossVelocity += gravity; tossY += tossVelocity; tossStone.style.top = `${tossY}px`;
+        tossStone.style.transform = `rotate(${tossY*0.15}deg) scale(${1+Math.abs(tossVelocity)*0.02})`;
         if (tossY >= window.innerHeight/2+150) { isTossing = false; checkWinCondition(); } else requestAnimationFrame(updateToss);
     }
     function handleStoneClick(idx, e) { if (isTossing && !stones[idx].collected) { stones[idx].collected = true; stones[idx].el.classList.add('collected'); } }
