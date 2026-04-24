@@ -1,38 +1,513 @@
+
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-<meta charset="UTF-8">
-<title>Беш Таш</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Беш Таш - Онлайн Соревнование</title>
+    <style>
+        :root {
+            --primary: #27ae60;
+            --accent: #f1c40f;
+            --bg: #1a2f1a;
+        }
 
-<link rel="stylesheet" href="style.css">
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0d1a0d;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+            touch-action: manipulation;
+            color: white;
+        }
+
+        #game-wrapper {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            flex-grow: 1;
+            background: var(--bg);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #grass-field {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #2ecc71;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(46, 204, 113, 0.4) 0%, transparent 80%),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40 Q5 30 10 40 M10 40 Q15 25 20 40 M20 40 Q25 35 30 40 M30 40 Q35 20 40 40' fill='none' stroke='%231e8449' stroke-width='1' opacity='0.3'/%3E%3C/svg%3E");
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+        }
+
+        #sidebar {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.9);
+            border-left: 2px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 20;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .stone {
+            position: absolute;
+            width: 65px;
+            height: 55px;
+            z-index: 5;
+            transition: transform 0.1s;
+            border-radius: 50% 45% 55% 48%;
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.4), 5px 10px 15px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+        }
+
+        .stone.collected {
+            filter: brightness(1.2) saturate(1.5) drop-shadow(0 0 10px var(--accent));
+            transform: scale(1.1) translateY(-15px) !important;
+        }
+
+        #toss-stone {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle at 30% 30%, #ff5e6c, #8e0e1a);
+            border-radius: 50%;
+            z-index: 6;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 1rem;
+            transition: transform 0.1s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        h2 { margin: 0 0 15px 0; color: var(--primary); font-size: 1.3rem; text-transform: uppercase; letter-spacing: 1px; }
+        #lb-list { flex-grow: 1; overflow-y: auto; margin-top: 10px; }
+        
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 5px;
+            border-bottom: 1px solid #333;
+            font-size: 0.85rem;
+            align-items: center;
+        }
+        
+        .lb-row.me { color: var(--accent); font-weight: bold; background: rgba(39, 174, 96, 0.1); }
+        
+        .lb-data {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .lb-time-val {
+            color: #888;
+            font-size: 0.75rem;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        #timer-display {
+            font-family: monospace;
+            font-size: 1.4rem;
+            color: var(--accent);
+            margin-top: 5px;
+        }
+
+        #hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            border: 1px solid var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            #game-wrapper { flex-direction: column; }
+            #sidebar { width: auto; height: 250px; border-left: none; border-top: 2px solid var(--primary); }
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="game">
+<div id="game-wrapper">
+    <div id="game-container">
+        <div id="grass-field"></div>
+        <div id="ui">
+            <h1 style="margin:0; font-size: 2.2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">БЕШ ТАШ</h1>
+            <div id="timer-display">00.00 сек</div>
+            <div id="level-info" style="color: var(--accent); font-weight: bold; font-size: 1.1rem;">Загрузка...</div>
+            <div id="stats-info" style="opacity: 0.9;">Ожидание игрока</div>
+            <div id="score-info" style="font-size: 1.6rem; margin-top: 5px; color: #fff;">Счет: 0</div>
+        </div>
+        
+        <div id="toss-stone"></div>
+        <div id="hint">ПРОБЕЛ ИЛИ КЛИК ДЛЯ БРОСКА</div>
+    </div>
 
-<h1>БЕШ ТАШ</h1>
-
-<div id="info">Нужно собрать: 1</div>
-
-<div id="toss"></div>
-
-<div id="hint">ПРОБЕЛ ИЛИ КЛИК ДЛЯ БРОСКА</div>
-
-<div id="message">
-
-<h2 id="msgTitle"></h2>
-
-<p id="msgText"></p>
-
-<button onclick="closeMessage()">Продолжить</button>
-
+    <aside id="sidebar">
+        <h2 id="lb-title">🏆 РЕЙТИНГ</h2>
+        <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: #666; padding-bottom: 5px; border-bottom: 1px solid #333;">
+            <span>ИГРОК</span>
+            <div style="display: flex; gap: 25px;">
+                <span>ОЧКИ</span>
+                <span>ВРЕМЯ</span>
+            </div>
+        </div>
+        <div id="lb-list">Загрузка...</div>
+        <div id="my-name" style="margin-top: 15px; font-size: 0.85rem; color: var(--accent); text-align: center; padding-top: 10px;"></div>
+    </aside>
 </div>
 
+<div id="auth-modal" class="modal">
+    <div class="modal-content">
+        <h2>ВХОД</h2>
+        <p>Введите ник. Рекорды сохраняются по времени и очкам!</p>
+        <input type="text" id="nickname-input" placeholder="Ваш ник" maxlength="12">
+        <button class="btn" id="login-btn">НАЧАТЬ</button>
+    </div>
 </div>
 
-<script src="script.js"></script>
+<div id="msg-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2 id="msg-title">РЕЗУЛЬТАТ</h2>
+        <p id="msg-body"></p>
+        <button class="btn" id="msg-btn">ДАЛЕЕ</button>
+    </div>
+</div>
 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, setDoc, getDoc, doc, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Проверка окружения
+    const isCloudEnabled = typeof __firebase_config !== 'undefined' && __firebase_config !== '{}' && __firebase_config !== '';
+    let db, auth, appId;
+
+    if (isCloudEnabled) {
+        try {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'besh-tash-v1';
+        } catch(e) {
+            console.error("Firebase Init Error:", e);
+        }
+    }
+
+    let user = null;
+    let playerName = "";
+    let score = 0;
+    let level = 1;
+    let stones = [];
+    let isTossing = false;
+    let tossY = 0;
+    let tossVelocity = 0;
+    
+    const gravity = 0.18; 
+    const initialTossVelocity = -10.5;
+
+    let startTime = 0;
+    let timerInterval = null;
+    let currentElapsedTime = 0;
+
+    const levelData = [
+        { name: "1: Биринчи", target: 1 },
+        { name: "2: Экинчи", target: 2 },
+        { name: "3: Үчүнчү", target: 3 },
+        { name: "4: Төртүнчү", target: 4 },
+        { name: "5: Жалаймак", target: 5 }
+    ];
+
+    async function init() {
+        if (!isCloudEnabled) {
+            console.log("Запущено в оффлайн режиме.");
+            document.getElementById('lb-title').innerText = "🏆 ЛОКАЛЬНЫЙ ТОП";
+            renderOfflineLeaderboard();
+            return;
+        }
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch(e) {
+            console.warn("Cloud connection failed, switching to local mode.");
+            renderOfflineLeaderboard();
+        }
+    }
+
+    if (isCloudEnabled) {
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (u) setupLeaderboardListener();
+            else renderOfflineLeaderboard();
+        });
+    }
+
+    document.getElementById('login-btn').onclick = () => {
+        const val = document.getElementById('nickname-input').value.trim();
+        if (val.length < 2) return;
+        playerName = val;
+        document.getElementById('auth-modal').style.display = 'none';
+        document.getElementById('my-name').innerText = "Игрок: " + playerName;
+        score = 0; level = 1;
+        startTimer();
+        initLevel();
+    };
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            currentElapsedTime = (Date.now() - startTime) / 1000;
+            document.getElementById('timer-display').innerText = currentElapsedTime.toFixed(2) + " сек";
+        }, 50);
+    }
+
+    // Слушатель облачного лидерборда
+    function setupLeaderboardListener() {
+        if (!isCloudEnabled || !user) return;
+        const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+        onSnapshot(query(lbRef), (snap) => {
+            let data = [];
+            snap.forEach(d => data.push(d.data()));
+            displayLeaderboard(data);
+        }, (err) => {
+            console.error(err);
+            renderOfflineLeaderboard();
+        });
+    }
+
+    // Отрисовка данных в таблицу
+    function displayLeaderboard(data) {
+        const list = document.getElementById('lb-list');
+        data.sort((a,b) => {
+            if ((b.totalScore || 0) !== (a.totalScore || 0)) {
+                return (b.totalScore || 0) - (a.totalScore || 0);
+            }
+            return (a.time || 999) - (b.time || 999);
+        });
+
+        list.innerHTML = data.slice(0, 15).map((p, i) => `
+            <div class="lb-row ${p.name === playerName ? 'me' : ''}">
+                <span>${i+1}. ${p.name}</span>
+                <div class="lb-data">
+                    <span>${p.totalScore || 0}</span>
+                    <span class="lb-time-val">${p.time ? p.time.toFixed(1) + 'с' : '--'}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Локальный рейтинг (LocalStorage)
+    function renderOfflineLeaderboard() {
+        const localData = JSON.parse(localStorage.getItem('besh_tash_scores') || '[]');
+        displayLeaderboard(localData);
+    }
+
+    function saveOfflineScore(name, newScore, time) {
+        let localData = JSON.parse(localStorage.getItem('besh_tash_scores') || '[]');
+        const idx = localData.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+        
+        if (idx > -1) {
+            localData[idx].totalScore += newScore;
+            localData[idx].time = Math.min(localData[idx].time, time);
+        } else {
+            localData.push({ name, totalScore: newScore, time });
+        }
+        
+        localStorage.setItem('besh_tash_scores', JSON.stringify(localData));
+        renderOfflineLeaderboard();
+    }
+
+    function initLevel() {
+        stones.forEach(s => s.el.remove());
+        stones = [];
+        const container = document.getElementById('game-container');
+        for (let i = 0; i < 5; i++) {
+            const el = document.createElement('div');
+            el.className = 'stone';
+            el.style.left = (Math.random() * (container.clientWidth - 100) + 50) + 'px';
+            el.style.top = (Math.random() * (container.clientHeight - 300) + 150) + 'px';
+            el.style.transform = `rotate(${Math.random() * 360}deg)`;
+            el.onmousedown = (e) => {
+                e.stopPropagation();
+                if (isTossing && !stones[i].collected) {
+                    stones[i].collected = true;
+                    el.classList.add('collected');
+                }
+            };
+            container.appendChild(el);
+            stones.push({ el, collected: false });
+        }
+        updateUI();
+        resetToss();
+    }
+
+    function updateUI() {
+        document.getElementById('level-info').innerText = "Этап " + levelData[level-1].name;
+        document.getElementById('stats-info').innerText = "Цель: " + levelData[level-1].target;
+        document.getElementById('score-info').innerText = "Счет: " + score;
+    }
+
+    function resetToss() {
+        const container = document.getElementById('game-container');
+        tossY = container.clientHeight - 100;
+        const tossEl = document.getElementById('toss-stone');
+        tossEl.style.left = (container.clientWidth / 2 - 27) + 'px';
+        tossEl.style.top = tossY + 'px';
+        isTossing = false;
+    }
+
+    function startToss() {
+        if (isTossing || playerName === "" || document.getElementById('msg-modal').style.display === 'flex') return;
+        isTossing = true;
+        tossVelocity = initialTossVelocity;
+        stones.forEach(s => { s.collected = false; s.el.classList.remove('collected'); });
+        requestAnimationFrame(gameLoop);
+    }
+
+    function gameLoop() {
+        if (!isTossing) return;
+        tossVelocity += gravity;
+        tossY += tossVelocity;
+        document.getElementById('toss-stone').style.top = tossY + 'px';
+        if (tossY >= document.getElementById('game-container').clientHeight - 100) {
+            isTossing = false;
+            checkResult();
+        } else {
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function checkResult() {
+        const collectedCount = stones.filter(s => s.collected).length;
+        const target = levelData[level-1].target;
+        if (collectedCount === target) {
+            score += level * 100;
+            if (level === 5) {
+                clearInterval(timerInterval);
+                saveProgress();
+            } else {
+                level++;
+                showModal("ОТЛИЧНО!", `Этап пройден! +${level*100} очков`, false);
+            }
+        } else {
+            showModal("ПРОМАХ", `Собрано ${collectedCount} из ${target}. Попробуй еще раз!`, false);
+        }
+    }
+
+    async function saveProgress() {
+        // Всегда сохраняем локально на случай отсутствия сети
+        saveOfflineScore(playerName, score, currentElapsedTime);
+
+        if (!isCloudEnabled || !user) {
+            showModal("ПОБЕДА!", `Рекорд сохранен локально! Время: ${currentElapsedTime.toFixed(2)}с. Счёт: ${score}`, true);
+            return;
+        }
+
+        try {
+            const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', playerName.toLowerCase());
+            const snap = await getDoc(playerRef);
+            let currentTotal = snap.exists() ? snap.data().totalScore || 0 : 0;
+            let currentBestTime = snap.exists() ? (snap.data().time || 999) : 999;
+            
+            await setDoc(playerRef, { 
+                name: playerName, 
+                totalScore: currentTotal + score, 
+                time: Math.min(currentBestTime, currentElapsedTime) 
+            }, { merge: true });
+            
+            showModal("ПОБЕДА!", `Результат отправлен в облако! Время: ${currentElapsedTime.toFixed(2)}с.`, true);
+        } catch(e) {
+            showModal("ПОБЕДА!", `Счёт: ${score}. (Облако недоступно, сохранено локально)`, true);
+        }
+    }
+
+    function showModal(title, body, isFinal) {
+        document.getElementById('msg-title').innerText = title;
+        document.getElementById('msg-body').innerText = body;
+        document.getElementById('msg-modal').style.display = 'flex';
+        document.getElementById('msg-btn').onclick = () => {
+            document.getElementById('msg-modal').style.display = 'none';
+            if (isFinal) {
+                document.getElementById('auth-modal').style.display = 'flex';
+            } else {
+                initLevel();
+            }
+        };
+    }
+
+    window.addEventListener('keydown', (e) => e.code === 'Space' && startToss());
+    document.getElementById('game-container').onmousedown = startToss;
+    init();
+</script>
 </body>
 </html>
